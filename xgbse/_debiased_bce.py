@@ -162,6 +162,7 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         persist_train=False,
         index_id=None,
         time_bins=None,
+        enable_categorical: bool = False
     ):
         """
         Transform feature space by fitting a XGBoost model and returning its leaf indices.
@@ -194,6 +195,12 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
 
             time_bins (np.array): Specified time windows to use when making survival predictions
 
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
 
         Returns:
             XGBSEDebiasedBCE: Trained XGBSEDebiasedBCE instance
@@ -205,14 +212,14 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         self.time_bins = time_bins
 
         # converting data to xgb format
-        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"])
+        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
 
         # converting validation data to xgb format
         evals = ()
         if validation_data:
             X_val, y_val = validation_data
             dvalid = convert_data_to_xgb_format(
-                X_val, y_val, self.xgb_params["objective"]
+                X_val, y_val, self.xgb_params["objective"], enable_categorical=enable_categorical
             )
             evals = [(dvalid, "validation")]
 
