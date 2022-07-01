@@ -158,6 +158,7 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
         if time_bins is None:
             time_bins = get_time_bins(self.T_train, self.E_train)
         self.time_bins = time_bins
+        # TODO check this section....
 
         # converting data to xgb format
         dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
