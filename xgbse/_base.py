@@ -17,7 +17,13 @@ class XGBSEBaseEstimator(BaseEstimator):
         self.bst = None
 
     def get_neighbors(
-        self, query_data, index_data=None, query_id=None, index_id=None, n_neighbors=30
+            self,
+            query_data,
+            index_data=None,
+            query_id=None,
+            index_id=None,
+            n_neighbors=30,
+            enable_categorical: bool = False
     ):
         """
         Search for portotypes (size: n_neighbors) for each unit in a
@@ -35,6 +41,13 @@ class XGBSEBaseEstimator(BaseEstimator):
                 If specified, comparables will be returned using this identifier.
 
             n_neighbors (int): Number of neighbors/comparables to be considered.
+
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
 
         Returns:
             comps_df (pd.DataFrame): A dataframe of comparables/neighbors for each
@@ -57,7 +70,7 @@ class XGBSEBaseEstimator(BaseEstimator):
             index_id = self.index_id
             index = self.tree
         else:
-            index_matrix = xgb.DMatrix(index_data)
+            index_matrix = xgb.DMatrix(index_data, enable_categorical=enable_categorical)
             index_leaves = self.bst.predict(
                 index_matrix,
                 pred_leaf=True,
@@ -68,7 +81,7 @@ class XGBSEBaseEstimator(BaseEstimator):
                 index_leaves = index_leaves.reshape(-1, 1)
             index = BallTree(index_leaves, metric="hamming")
 
-        query_matrix = xgb.DMatrix(query_data)
+        query_matrix = xgb.DMatrix(query_data, enable_categorical=enable_categorical)
         query_leaves = self.bst.predict(
             query_matrix,
             pred_leaf=True,

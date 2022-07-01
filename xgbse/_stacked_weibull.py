@@ -51,9 +51,9 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
     """
 
     def __init__(
-        self,
-        xgb_params=None,
-        weibull_params=None,
+            self,
+            xgb_params=None,
+            weibull_params=None,
     ):
         """
         Args:
@@ -97,16 +97,17 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
         self.feature_importances_ = None
 
     def fit(
-        self,
-        X,
-        y,
-        num_boost_round=1000,
-        validation_data=None,
-        early_stopping_rounds=None,
-        verbose_eval=0,
-        persist_train=False,
-        index_id=None,
-        time_bins=None,
+            self,
+            X,
+            y,
+            num_boost_round=1000,
+            validation_data=None,
+            early_stopping_rounds=None,
+            verbose_eval=0,
+            persist_train=False,
+            index_id=None,
+            time_bins=None,
+            enable_categorical: bool = False
     ):
         """
         Fit XGBoost model to predict a value that is interpreted as a risk metric.
@@ -138,6 +139,13 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
 
             time_bins (np.array): Specified time windows to use when making survival predictions
 
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
+
         Returns:
             XGBSEStackedWeibull: Trained XGBSEStackedWeibull instance
         """
@@ -148,14 +156,14 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
         self.time_bins = time_bins
 
         # converting data to xgb format
-        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"])
+        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
 
         # converting validation data to xgb format
         evals = ()
         if validation_data:
             X_val, y_val = validation_data
             dvalid = convert_data_to_xgb_format(
-                X_val, y_val, self.xgb_params["objective"]
+                X_val, y_val, self.xgb_params["objective"], enable_categorical=enable_categorical
             )
             evals = [(dvalid, "validation")]
 
@@ -203,7 +211,7 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
 
         return self
 
-    def predict(self, X, return_interval_probs=False):
+    def predict(self, X, return_interval_probs=False, enable_categorical: bool = False):
         """
         Predicts survival probabilities using the XGBoost + Weibull AFT stacking pipeline.
 
@@ -215,6 +223,13 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
                 supposed to be returned. If False the cumulative survival is returned.
                 Default is False.
 
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
+
         Returns:
             pd.DataFrame: A dataframe of survival probabilities
             for all times (columns), from a time_bins array, for all samples of X
@@ -223,7 +238,7 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
         """
 
         # converting to xgb format
-        d_matrix = xgb.DMatrix(X)
+        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
 
         # getting leaves and extracting neighbors
         risk = self.bst.predict(

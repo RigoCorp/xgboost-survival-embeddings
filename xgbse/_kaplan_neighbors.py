@@ -101,16 +101,17 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
         self.feature_importances_ = None
 
     def fit(
-        self,
-        X,
-        y,
-        num_boost_round=1000,
-        validation_data=None,
-        early_stopping_rounds=None,
-        verbose_eval=0,
-        persist_train=True,
-        index_id=None,
-        time_bins=None,
+            self,
+            X,
+            y,
+            num_boost_round=1000,
+            validation_data=None,
+            early_stopping_rounds=None,
+            verbose_eval=0,
+            persist_train=True,
+            index_id=None,
+            time_bins=None,
+            enable_categorical: bool = False
     ):
         """
         Transform feature space by fitting a XGBoost model and outputting its leaf indices.
@@ -142,6 +143,13 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
 
             time_bins (np.array): Specified time windows to use when making survival predictions
 
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
+
         Returns:
             XGBSEKaplanNeighbors: Fitted instance of XGBSEKaplanNeighbors
         """
@@ -152,14 +160,14 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
         self.time_bins = time_bins
 
         # converting data to xgb format
-        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"])
+        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
 
         # converting validation data to xgb format
         evals = ()
         if validation_data:
             X_val, y_val = validation_data
             dvalid = convert_data_to_xgb_format(
-                X_val, y_val, self.xgb_params["objective"]
+                X_val, y_val, self.xgb_params["objective"], enable_categorical=enable_categorical
             )
             evals = [(dvalid, "validation")]
 
@@ -190,12 +198,13 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
         return self
 
     def predict(
-        self,
-        X,
-        time_bins=None,
-        return_ci=False,
-        ci_width=0.683,
-        return_interval_probs=False,
+            self,
+            X,
+            time_bins=None,
+            return_ci=False,
+            ci_width=0.683,
+            return_interval_probs=False,
+            enable_categorical: bool = False
     ):
         """
         Make queries to nearest neighbor search index build on the transformed XGBoost space.
@@ -213,6 +222,13 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
             return_interval_probs (Bool): Boolean indicating if interval probabilities are
                 supposed to be returned. If False the cumulative survival is returned.
 
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
+
 
         Returns:
             (pd.DataFrame): A dataframe of survival probabilities
@@ -228,7 +244,7 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
         """
 
         # converting to xgb format
-        d_matrix = xgb.DMatrix(X)
+        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
 
         # getting leaves and extracting neighbors
         leaves = self.bst.predict(
@@ -271,7 +287,8 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
 
         if return_ci and return_interval_probs:
             raise ValueError(
-                "Confidence intervals for interval probabilities is not supported. Choose between return_ci and return_interval_probs."
+                "Confidence intervals for interval probabilities is not supported. "
+                "Choose between return_ci and return_interval_probs."
             )
 
         if return_interval_probs:
@@ -315,8 +332,8 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
     """
 
     def __init__(
-        self,
-        xgb_params=None,
+            self,
+            xgb_params=None,
     ):
         """
         Args:
@@ -347,14 +364,15 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
         self.feature_importances_ = None
 
     def fit(
-        self,
-        X,
-        y,
-        persist_train=True,
-        index_id=None,
-        time_bins=None,
-        ci_width=0.683,
-        **xgb_kwargs,
+            self,
+            X,
+            y,
+            persist_train=True,
+            index_id=None,
+            time_bins=None,
+            ci_width=0.683,
+            enable_categorical: bool = False,
+            **xgb_kwargs,
     ):
         """
         Fit a single decision tree using xgboost. For each leaf in the tree,
@@ -381,6 +399,13 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
 
             ci_width (Float): Width of confidence interval
 
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
+
         Returns:
             XGBSEKaplanTree: Trained instance of XGBSEKaplanTree
         """
@@ -391,7 +416,7 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
         self.time_bins = time_bins
 
         # converting data to xgb format
-        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"])
+        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
 
         # training XGB
         self.bst = xgb.train(self.xgb_params, dtrain, num_boost_round=1, **xgb_kwargs)
@@ -437,7 +462,7 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
 
         return self
 
-    def predict(self, X, return_ci=False, return_interval_probs=False):
+    def predict(self, X, return_ci=False, return_interval_probs=False, enable_categorical: bool = False):
         """
         Run samples through tree until terminal nodes. Predict the Kaplan-Meier
         estimator associated to the leaf node each sample ended into.
@@ -449,6 +474,13 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
 
             return_interval_probs (Bool): Boolean indicating if interval probabilities are
                 supposed to be returned. If False the cumulative survival is returned.
+
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
 
 
         Returns:
@@ -465,7 +497,7 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
         """
 
         # converting to xgb format
-        d_matrix = xgb.DMatrix(X)
+        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
 
         # getting leaves and extracting neighbors
         leaves = self.bst.predict(
@@ -479,7 +511,8 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
 
         if return_ci and return_interval_probs:
             raise ValueError(
-                "Confidence intervals for interval probabilities is not supported. Choose between return_ci and return_interval_probs."
+                "Confidence intervals for interval probabilities is not supported. "
+                "Choose between return_ci and return_interval_probs."
             )
 
         if return_interval_probs:

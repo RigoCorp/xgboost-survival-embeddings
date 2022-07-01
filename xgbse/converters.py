@@ -42,7 +42,7 @@ def convert_y(y):
     return y[event_field], y[time_field]
 
 
-def convert_data_to_xgb_format(X, y, objective):
+def convert_data_to_xgb_format(X, y, objective, enable_categorical: bool = False):
     """Convert (X, y) data format to xgb.DMatrix format, either using cox or aft models.
 
     Args:
@@ -51,6 +51,7 @@ def convert_data_to_xgb_format(X, y, objective):
         y (structured array(numpy.bool_, numpy.number)): binary event indicator as first field,
             and time of event or time of censoring as second field.
         objective (string): one of 'survival:aft' or 'survival:cox'
+        enable_categorical: boolean, optional
 
     Returns:
         xgb.DMatrix: data to train xgb
@@ -60,10 +61,10 @@ def convert_data_to_xgb_format(X, y, objective):
 
     # converting data to xgb format
     if objective == "survival:aft":
-        d_matrix = build_xgb_aft_dmatrix(X, T, E)
+        d_matrix = build_xgb_aft_dmatrix(X, T, E, enable_categorical=enable_categorical)
 
     elif objective == "survival:cox":
-        d_matrix = build_xgb_cox_dmatrix(X, T, E)
+        d_matrix = build_xgb_cox_dmatrix(X, T, E, enable_categorical=enable_categorical)
 
     else:
         raise ValueError("Objective not supported. Use survival:cox or survival:aft")
@@ -72,7 +73,7 @@ def convert_data_to_xgb_format(X, y, objective):
 
 
 # Building XGB Design matrices - AFT and Cox Model
-def build_xgb_aft_dmatrix(X, T, E):
+def build_xgb_aft_dmatrix(X, T, E, enable_categorical: bool = False):
     """Builds a XGB DMatrix using specified Data Frame of features (X)
      arrays of times (T) and censors/events (E).
 
@@ -81,12 +82,18 @@ def build_xgb_aft_dmatrix(X, T, E):
             XGBDMatrix format.
         T ([np.array, pd.Series]): Array of times.
         E ([np.array, pd.Series]): Array of censors(False) / events(True).
+        enable_categorical: boolean, optional
+            .. versionadded:: 1.3.0
+            .. note:: This parameter is experimental
+            Experimental support of specializing for categorical features.  Do not set
+            to True unless you are interested in development. Also, JSON/UBJSON
+            serialization format is required.
 
     Returns:
         xgb.DMatrix: A XGB DMatrix is returned including features and target.
     """
 
-    d_matrix = xgb.DMatrix(X)
+    d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
 
     y_lower_bound = T
     y_upper_bound = np.where(E, T, np.inf)
@@ -96,7 +103,7 @@ def build_xgb_aft_dmatrix(X, T, E):
     return d_matrix
 
 
-def build_xgb_cox_dmatrix(X, T, E):
+def build_xgb_cox_dmatrix(X, T, E, enable_categorical: bool = False):
     """Builds a XGB DMatrix using specified Data Frame of features (X)
         arrays of times (T) and censors/events (E).
 
@@ -104,6 +111,12 @@ def build_xgb_cox_dmatrix(X, T, E):
         X ([pd.DataFrame, np.array]): Data Frame to be converted to XGBDMatrix format.
         T ([np.array, pd.Series]): Array of times.
         E ([np.array, pd.Series]): Array of censors(False) / events(True).
+        enable_categorical: boolean, optional
+            .. versionadded:: 1.3.0
+            .. note:: This parameter is experimental
+            Experimental support of specializing for categorical features.  Do not set
+            to True unless you are interested in development. Also, JSON/UBJSON
+            serialization format is required.
 
     Returns:
         (DMatrix): A XGB DMatrix is returned including features and target.
@@ -111,7 +124,7 @@ def build_xgb_cox_dmatrix(X, T, E):
 
     target = np.where(E, T, -T)
 
-    return xgb.DMatrix(X, label=target)
+    return xgb.DMatrix(X, label=target, enable_categorical=enable_categorical)
 
 
 def hazard_to_survival(interval):

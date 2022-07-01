@@ -348,7 +348,7 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         # to cumulative survival curve
         return hazard_to_survival(preds)
 
-    def predict(self, X, return_interval_probs=False):
+    def predict(self, X, return_interval_probs=False, enable_categorical: bool = False):
         """
         Predicts survival probabilities using the XGBoost + Logistic Regression pipeline.
 
@@ -360,6 +360,13 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
                 supposed to be returned. If False the cumulative survival is returned.
                 Default is False.
 
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
+
         Returns:
             pd.DataFrame: A dataframe of survival probabilities
             for all times (columns), from a time_bins array, for all samples of X
@@ -368,7 +375,7 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         """
 
         # converting to xgb format
-        d_matrix = xgb.DMatrix(X)
+        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
 
         # getting leaves and extracting neighbors
         leaves = self.bst.predict(
