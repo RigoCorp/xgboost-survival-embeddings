@@ -234,7 +234,7 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         )
         self.feature_importances_ = self.bst.get_score()
         # predicting and encoding leaves
-        self.encoder = OneHotEncoder()
+        self.encoder = OneHotEncoder(handle_unknown="ignore")
         leaves = self.bst.predict(
             dtrain, pred_leaf=True, iteration_range=(0, self.bst.best_iteration + 1)
         )

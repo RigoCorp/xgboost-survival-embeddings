@@ -147,7 +147,7 @@ def approx_brier_score(y_true, survival, aggregate="mean"):
     # adding censoring distribution survival at event
     event_time_windows = _match_times_to_windows(times, survival.columns)
     scoring_df["cens_at_event"] = censoring_dist[event_time_windows].iloc[0].values
-
+    # TODO Something is broken when use sklearn.model_selection.cross_val_score
     # list of window results
     window_results = []
 

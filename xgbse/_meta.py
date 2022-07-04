@@ -60,7 +60,7 @@ class XGBSEBootstrapEstimator(BaseEstimator):
 
         return self
 
-    def predict(self, X, return_ci=False, ci_width=0.683, return_interval_probs=False):
+    def predict(self, X, return_ci=False, ci_width=0.683, return_interval_probs=False, enable_categorical=False):
 
         """
         Predicts survival as given by the base estimator. A survival function, its upper and lower
@@ -72,6 +72,13 @@ class XGBSEBootstrapEstimator(BaseEstimator):
             return_ci (Bool): whether to include confidence intervals
 
             ci_width (Float): width of confidence interval
+
+            enable_categorical: boolean, optional
+                .. versionadded:: 1.3.0
+                .. note:: This parameter is experimental
+                Experimental support of specializing for categorical features.  Do not set
+                to True unless you are interested in development. Also, JSON/UBJSON
+                serialization format is required.
 
         Returns:
             ([(pd.DataFrame, np.array, np.array), pd.DataFrame]):
@@ -92,7 +99,7 @@ class XGBSEBootstrapEstimator(BaseEstimator):
         for estimator in self.estimators_:
 
             temp_preds = estimator.predict(
-                X, return_interval_probs=return_interval_probs
+                X, return_interval_probs=return_interval_probs, enable_categorical=enable_categorical
             )
             preds_list.append(temp_preds)
 

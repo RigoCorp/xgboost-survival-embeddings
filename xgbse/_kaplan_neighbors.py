@@ -504,11 +504,11 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
         leaves = self.bst.predict(
             d_matrix, pred_leaf=True, iteration_range=(0, self.bst.best_iteration + 1)
         )
-
+        leaves_index = [x for x in leaves if x in self._train_survival.index]
         # searching for kaplan meier curves in leaves
-        preds_df = self._train_survival.loc[leaves].reset_index(drop=True)
-        upper_ci = self._train_upper_ci.loc[leaves].reset_index(drop=True)
-        lower_ci = self._train_lower_ci.loc[leaves].reset_index(drop=True)
+        preds_df = self._train_survival.loc[leaves_index].reset_index(drop=True)
+        upper_ci = self._train_upper_ci.loc[leaves_index].reset_index(drop=True)
+        lower_ci = self._train_lower_ci.loc[leaves_index].reset_index(drop=True)
 
         if return_ci and return_interval_probs:
             raise ValueError(
