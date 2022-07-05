@@ -26,7 +26,7 @@ class XGBSEBaseEstimator(BaseEstimator):
             enable_categorical: bool = False
     ):
         """
-        Search for portotypes (size: n_neighbors) for each unit in a
+        Search for prototypes (size: n_neighbors) for each unit in a
         dataframe X. If units array is specified, comparables will be returned using
         its identifiers. If not, a dataframe of comparables indexes for each sample
         in X is returned.
