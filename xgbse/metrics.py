@@ -135,7 +135,7 @@ def approx_brier_score(y_true, survival, aggregate="mean"):
     """
     events, times = convert_y(y_true)
     events = events.astype(bool)
-
+    # TODO Check this function with our data, why all are ones?
     # calculating censoring distribution
     censoring_dist, _, _ = calculate_kaplan_vectorized(
         times.reshape(1, -1), ~events.reshape(1, -1), survival.columns
