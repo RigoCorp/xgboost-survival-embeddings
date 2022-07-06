@@ -123,7 +123,7 @@ def calculate_survival_func(E_sorted):
     # number of elements at risk
     at_risk = np.r_[n_samples, np.arange(n_samples, 0, -1)]
 
-    # product argument for surivial
+    # product argument for survival
     survival_prod_arg = 1 - (E_sorted / at_risk)
 
     return np.cumprod(survival_prod_arg, axis=1)
