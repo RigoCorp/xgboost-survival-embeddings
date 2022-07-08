@@ -10,10 +10,11 @@ def get_time_bins(T, E, size=12):
     """
     Method to automatically define time bins
     """
-
-    lower_bound = max(T[E == 0].min(), T[E == 1].min()) + 1
-    upper_bound = min(T[E == 0].max(), T[E == 1].max()) - 1
-
+    # OLD CODE:
+    # lower_bound = max(T[E == 0].min(), T[E == 1].min()) + 1
+    # upper_bound = min(T[E == 0].max(), T[E == 1].max()) - 1
+    lower_bound = np.nanmin(T[E == 1]) + 1
+    upper_bound = np.nanmax(T[E == 1]) - 1
     return np.linspace(lower_bound, upper_bound, size, dtype=int)
 
 
@@ -74,12 +75,19 @@ def sample_time_bins(surv_array, T_neighs, time_bins):
     """
 
     surv_df = []
-
     for t in time_bins:
-        survival_at_t = (surv_array + (T_neighs > t)).min(axis=1)
+        # Old code:
+        # survival_at_t = (surv_array + (T_neighs > t)).min(axis=1)
+
+        mask = np.zeros_like(T_neighs)
+        mask[T_neighs > t] = np.inf
+        survival_at_t = (surv_array + mask).min(axis=1)
+        # survival_at_t = np.where(~np.isfinite(survival_at_t), survival_at_t, 1.0)
+
         surv_df.append(survival_at_t)
 
     surv_df = pd.DataFrame(surv_df, index=time_bins).T
+    surv_df.where(np.isfinite(surv_df), 1.0, inplace=True)
     return surv_df
 
 
