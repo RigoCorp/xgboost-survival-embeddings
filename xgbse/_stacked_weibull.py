@@ -78,7 +78,7 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
 
                 Check <https://xgboost.readthedocs.io/en/latest/parameter.html> for more options.
 
-            weibull_params (Dict): Parameters for Weibull Regerssion model.
+            weibull_params (Dict): Parameters for Weibull Regression model.
                 If not passed, will use the default parameters as shown in the Lifelines documentation.
 
                 Check <https://lifelines.readthedocs.io/en/latest/fitters/regression/WeibullAFTFitter.html>
