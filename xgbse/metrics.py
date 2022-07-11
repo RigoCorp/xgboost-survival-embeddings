@@ -162,7 +162,7 @@ def approx_brier_score(y_true, survival, aggregate="mean"):
         # calculating censored brier score first term
         # as by formula on B4.3 of https://arxiv.org/pdf/1811.11347.pdf
         first_term = (
-            (scoring_df["t"] <= window).astype(int)
+            (scoring_df["t"] <= window)  # .astype(int)
             * (scoring_df["e"])
             * (scoring_df["surv_at_window"]) ** 2
             / (scoring_df["cens_at_event"])
@@ -171,7 +171,7 @@ def approx_brier_score(y_true, survival, aggregate="mean"):
         # calculating censored brier score second term
         # as by formula on B4.3 of https://arxiv.org/pdf/1811.11347.pdf
         second_term = (
-            (scoring_df["t"] > window).astype(int)
+            (scoring_df["t"] > window)  # .astype(int)
             * (1 - scoring_df["surv_at_window"]) ** 2
             / (scoring_df["cens_at_window"])
         )
