@@ -91,8 +91,8 @@ def concordance_index(y_true, survival, risk_strategy="mean", which_window=None)
 
         # counting total, concordant and tied pairs
         count_pairs += samples_after_i.shape[0]
-        concordant_pairs += (samples_after_i["r"] < row["r"]).sum()
-        tied_pairs += (samples_after_i["r"] == row["r"]).sum()
+        concordant_pairs += np.sum(samples_after_i["r"] < row["r"])
+        tied_pairs += np.sum(samples_after_i["r"] == row["r"])
 
     return (concordant_pairs + tied_pairs / 2) / count_pairs
 
@@ -181,7 +181,11 @@ def approx_brier_score(y_true, survival, aggregate="mean"):
         # result = (first_term + second_term).sum() / scoring_df.shape[0]
 
         added_terms = (first_term + second_term)
-        result = np.nanmean(added_terms[np.isfinite(added_terms)])
+        added_terms = added_terms[np.isfinite(added_terms)]
+        if len(added_terms) > 0:
+            result = np.nanmean(added_terms)
+        else:
+            result = np.nan
         window_results.append(result)
 
     if aggregate == "mean":
