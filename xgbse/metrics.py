@@ -267,7 +267,7 @@ def dist_calibration_score(y_true, survival, n_bins=10, returns="pval"):
     # https://arxiv.org/pdf/1811.11347.pdf
     count_cens = (
         scoring_df.query("e == False")
-        .groupby("bin")
+        .groupby(by="bin", observed=False)
         .apply(lambda x: (1 - np.clip(x.name.left, 0, 1) / x["survival_at_ti"]).sum())
     )
 
@@ -277,7 +277,7 @@ def dist_calibration_score(y_true, survival, n_bins=10, returns="pval"):
     # https://arxiv.org/pdf/1811.11347.pdf
     count_cens_spill = (
         scoring_df.query("e == False")
-        .groupby("bin")["cens_spill_term"]
+        .groupby(by="bin", observed=False)["cens_spill_term"]
         .sum()
         .iloc[::-1]
         .shift()

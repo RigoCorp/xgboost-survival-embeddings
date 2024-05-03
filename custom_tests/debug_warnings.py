@@ -34,6 +34,7 @@ feature_types = ["c" if X[c].dtype.name in ["object", "category"] else "q" for c
 T = df['duration']
 E = df['observed']
 y = convert_to_structured(T, E)
+ENABLE_CATEGORICAL = True
 
 # splitting between train, and validation
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1 / 3, random_state=0)
@@ -48,7 +49,7 @@ bootstrap_estimator = XGBSEBootstrapEstimator(
 # fitting the meta estimator
 bootstrap_estimator.fit(X_train, y_train,
                         time_bins=TIME_BINS,
-                        enable_categorical=True,
+                        enable_categorical=ENABLE_CATEGORICAL,
                         validation_data=(X_test, y_test),
                         early_stopping_rounds=100,
                         verbose_eval=100,
@@ -58,7 +59,7 @@ bootstrap_estimator.fit(X_train, y_train,
 mean_prob, upper_ci_prob, lower_ci_prob = bootstrap_estimator.predict(
     X_test,
     return_ci=True,
-    enable_categorical=True,
+    enable_categorical=ENABLE_CATEGORICAL,
     feature_types=feature_types
 )
 
@@ -85,10 +86,10 @@ PARAMS_TREE = {
 
 # fitting xgbse model
 xgbse_model = XGBSEKaplanTree(PARAMS_TREE)
-xgbse_model.fit(X_train, y_train, time_bins=TIME_BINS)
+xgbse_model.fit(X_train, y_train, time_bins=TIME_BINS, enable_categorical=ENABLE_CATEGORICAL)
 
 # predicting
-mean, upper_ci, lower_ci = xgbse_model.predict(X_test, return_ci=True)
+mean, upper_ci, lower_ci = xgbse_model.predict(X_test, return_ci=True, enable_categorical=ENABLE_CATEGORICAL)
 
 # print metrics
 print(f"C-index: {concordance_index(y_test, mean)}")
@@ -107,10 +108,10 @@ base_model = XGBSEKaplanTree(PARAMS_TREE)
 bootstrap_estimator = XGBSEBootstrapEstimator(base_model, n_estimators=100)
 
 # fitting the meta estimator
-bootstrap_estimator.fit(X_train, y_train, time_bins=TIME_BINS)
+bootstrap_estimator.fit(X_train, y_train, time_bins=TIME_BINS, enable_categorical=ENABLE_CATEGORICAL)
 
 # predicting
-mean, upper_ci, lower_ci = bootstrap_estimator.predict(X_test, return_ci=True)
+mean, upper_ci, lower_ci = bootstrap_estimator.predict(X_test, return_ci=True, enable_categorical=ENABLE_CATEGORICAL)
 
 # print metrics
 print(f"C-index: {concordance_index(y_test, mean)}")

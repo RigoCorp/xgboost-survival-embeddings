@@ -318,7 +318,10 @@ def _align_leaf_target(neighs, target):
     # filling nas due to different leaf sizes with 0
     target_neighs = (
         pd.concat([pd.DataFrame(e) for e in target_neighs.values], axis=1)
-        .T.fillna(0)
+        .T
+        .infer_objects()  # Infer the best possible dtypes for object columns
+        # .astype(float)  # Convert all columns to float
+        .fillna(0)
         .values
     )
 
@@ -371,6 +374,7 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
         self.persist_train = False
         self.index_id = None
         self.feature_importances_ = None
+        self.iteration_range_max = 0
 
     def fit(
             self,
@@ -437,8 +441,15 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
         self.feature_importances_ = self.bst.get_score()
 
         # getting leaves
+        try:
+            self.iteration_range_max = self.bst.best_iteration + 1
+        except AttributeError:
+            pass
+
         leaves = self.bst.predict(
-            dtrain, pred_leaf=True, iteration_range=(0, self.bst.best_iteration + 1)
+            dtrain,
+            pred_leaf=True,
+            iteration_range=(0, self.iteration_range_max)
         )
 
         # organizing elements per leaf
@@ -524,7 +535,9 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
 
         # getting leaves and extracting neighbors
         leaves = self.bst.predict(
-            d_matrix, pred_leaf=True, iteration_range=(0, self.bst.best_iteration + 1)
+            d_matrix,
+            pred_leaf=True,
+            iteration_range=(0, self.iteration_range_max)
         )
         leaves_index = [x for x in leaves if x in self._train_survival.index]
         # searching for kaplan meier curves in leaves
