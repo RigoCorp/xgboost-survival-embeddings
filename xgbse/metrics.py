@@ -260,7 +260,7 @@ def dist_calibration_score(y_true, survival, n_bins=10, returns="pval"):
 
     # computing uncensored counts:
     # sum the number of events per bin
-    count_uncens = scoring_df.query("e == True").groupby("bin").size()
+    count_uncens = scoring_df.query("e == True").groupby(by="bin", observed=False).size()
 
     # computing censored counts at bin of censoring
     # formula (A) as by page 49 of

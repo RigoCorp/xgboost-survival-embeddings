@@ -1,3 +1,5 @@
+from typing import Optional, Sequence
+
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -107,7 +109,8 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
             persist_train=False,
             index_id=None,
             time_bins=None,
-            enable_categorical: bool = False
+            enable_categorical: bool = False,
+            feature_types: Optional[Sequence[str]] = None
     ):
         """
         Fit XGBoost model to predict a value that is interpreted as a risk metric.
@@ -146,6 +149,8 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
 
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
+
         Returns:
             XGBSEStackedWeibull: Trained XGBSEStackedWeibull instance
         """
@@ -156,14 +161,18 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
         self.time_bins = time_bins
 
         # converting data to xgb format
-        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
+        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"],
+                                            enable_categorical=enable_categorical,
+                                            feature_types=feature_types)
 
         # converting validation data to xgb format
         evals = ()
         if validation_data:
             X_val, y_val = validation_data
             dvalid = convert_data_to_xgb_format(
-                X_val, y_val, self.xgb_params["objective"], enable_categorical=enable_categorical
+                X_val, y_val, self.xgb_params["objective"],
+                enable_categorical=enable_categorical,
+                feature_types=feature_types
             )
             evals = [(dvalid, "validation")]
 
@@ -211,7 +220,11 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
 
         return self
 
-    def predict(self, X, return_interval_probs=False, enable_categorical: bool = False):
+    def predict(self, X,
+                return_interval_probs=False,
+                enable_categorical: bool = False,
+                feature_types: Optional[Sequence[str]] = None
+                ):
         """
         Predicts survival probabilities using the XGBoost + Weibull AFT stacking pipeline.
 
@@ -229,6 +242,7 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
                 Experimental support of specializing for categorical features.  Do not set
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
 
         Returns:
             pd.DataFrame: A dataframe of survival probabilities
@@ -238,7 +252,7 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
         """
 
         # converting to xgb format
-        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
+        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical, feature_types=feature_types)
 
         # getting leaves and extracting neighbors
         risk = self.bst.predict(

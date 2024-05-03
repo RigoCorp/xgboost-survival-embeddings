@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -111,7 +112,8 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
             persist_train=True,
             index_id=None,
             time_bins=None,
-            enable_categorical: bool = False
+            enable_categorical: bool = False,
+            feature_types: Optional[Sequence[str]] = None
     ):
         """
         Transform feature space by fitting a XGBoost model and outputting its leaf indices.
@@ -149,6 +151,7 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
                 Experimental support of specializing for categorical features.  Do not set
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
 
         Returns:
             XGBSEKaplanNeighbors: Fitted instance of XGBSEKaplanNeighbors
@@ -161,14 +164,17 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
         # TODO check this section....
 
         # converting data to xgb format
-        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
+        dtrain = convert_data_to_xgb_format(
+            X, y, self.xgb_params["objective"], enable_categorical=enable_categorical, feature_types=feature_types
+        )
 
         # converting validation data to xgb format
         evals = ()
         if validation_data:
             X_val, y_val = validation_data
             dvalid = convert_data_to_xgb_format(
-                X_val, y_val, self.xgb_params["objective"], enable_categorical=enable_categorical
+                X_val, y_val, self.xgb_params["objective"],
+                enable_categorical=enable_categorical, feature_types=feature_types
             )
             evals = [(dvalid, "validation")]
 
@@ -205,7 +211,8 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
             return_ci=False,
             ci_width=0.683,
             return_interval_probs=False,
-            enable_categorical: bool = False
+            enable_categorical: bool = False,
+            feature_types: Optional[Sequence[str]] = None
     ):
         """
         Make queries to nearest neighbor search index build on the transformed XGBoost space.
@@ -229,6 +236,7 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
                 Experimental support of specializing for categorical features.  Do not set
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
 
 
         Returns:
@@ -245,7 +253,7 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
         """
 
         # converting to xgb format
-        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
+        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical, feature_types=feature_types)
 
         # getting leaves and extracting neighbors
         leaves = self.bst.predict(
@@ -373,7 +381,8 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
             time_bins=None,
             ci_width=0.683,
             enable_categorical: bool = False,
-            **xgb_kwargs,
+            feature_types: Optional[Sequence[str]] = None,
+            **xgb_kwargs
     ):
         """
         Fit a single decision tree using xgboost. For each leaf in the tree,
@@ -407,6 +416,8 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
 
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
+
         Returns:
             XGBSEKaplanTree: Trained instance of XGBSEKaplanTree
         """
@@ -417,7 +428,9 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
         self.time_bins = time_bins
 
         # converting data to xgb format
-        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
+        dtrain = convert_data_to_xgb_format(
+            X, y, self.xgb_params["objective"], enable_categorical=enable_categorical, feature_types=feature_types
+        )
 
         # training XGB
         self.bst = xgb.train(self.xgb_params, dtrain, num_boost_round=1, **xgb_kwargs)
@@ -463,7 +476,14 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
 
         return self
 
-    def predict(self, X, return_ci=False, return_interval_probs=False, enable_categorical: bool = False):
+    def predict(
+            self,
+            X,
+            return_ci=False,
+            return_interval_probs=False,
+            enable_categorical: bool = False,
+            feature_types: Optional[Sequence[str]] = None
+    ):
         """
         Run samples through tree until terminal nodes. Predict the Kaplan-Meier
         estimator associated to the leaf node each sample ended into.
@@ -483,6 +503,8 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
 
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
+
 
         Returns:
             preds_df (pd.DataFrame): A dataframe of survival probabilities
@@ -498,7 +520,7 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
         """
 
         # converting to xgb format
-        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
+        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical, feature_types=feature_types)
 
         # getting leaves and extracting neighbors
         leaves = self.bst.predict(

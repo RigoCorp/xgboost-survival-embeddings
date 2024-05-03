@@ -1,3 +1,5 @@
+from typing import Optional, Sequence
+
 import numpy as np
 import xgboost as xgb
 
@@ -42,7 +44,9 @@ def convert_y(y):
     return y[event_field], y[time_field]
 
 
-def convert_data_to_xgb_format(X, y, objective, enable_categorical: bool = False):
+def convert_data_to_xgb_format(X, y, objective,
+                               enable_categorical: bool = False,
+                               feature_types: Optional[Sequence[str]] = None):
     """Convert (X, y) data format to xgb.DMatrix format, either using cox or aft models.
 
     Args:
@@ -52,6 +56,7 @@ def convert_data_to_xgb_format(X, y, objective, enable_categorical: bool = False
             and time of event or time of censoring as second field.
         objective (string): one of 'survival:aft' or 'survival:cox'
         enable_categorical: boolean, optional
+        feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
 
     Returns:
         xgb.DMatrix: data to train xgb
@@ -61,10 +66,10 @@ def convert_data_to_xgb_format(X, y, objective, enable_categorical: bool = False
 
     # converting data to xgb format
     if objective == "survival:aft":
-        d_matrix = build_xgb_aft_dmatrix(X, T, E, enable_categorical=enable_categorical)
+        d_matrix = build_xgb_aft_dmatrix(X, T, E, enable_categorical=enable_categorical, feature_types=feature_types)
 
     elif objective == "survival:cox":
-        d_matrix = build_xgb_cox_dmatrix(X, T, E, enable_categorical=enable_categorical)
+        d_matrix = build_xgb_cox_dmatrix(X, T, E, enable_categorical=enable_categorical, feature_types=feature_types)
 
     else:
         raise ValueError("Objective not supported. Use survival:cox or survival:aft")
@@ -73,7 +78,7 @@ def convert_data_to_xgb_format(X, y, objective, enable_categorical: bool = False
 
 
 # Building XGB Design matrices - AFT and Cox Model
-def build_xgb_aft_dmatrix(X, T, E, enable_categorical: bool = False):
+def build_xgb_aft_dmatrix(X, T, E, enable_categorical: bool = False, feature_types: Optional[Sequence[str]] = None):
     """Builds a XGB DMatrix using specified Data Frame of features (X)
      arrays of times (T) and censors/events (E).
 
@@ -89,11 +94,13 @@ def build_xgb_aft_dmatrix(X, T, E, enable_categorical: bool = False):
             to True unless you are interested in development. Also, JSON/UBJSON
             serialization format is required.
 
+        feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
+
     Returns:
         xgb.DMatrix: A XGB DMatrix is returned including features and target.
     """
 
-    d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
+    d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical, feature_types=feature_types)
 
     y_lower_bound = T
     y_upper_bound = np.where(E, T, np.inf)
@@ -103,7 +110,7 @@ def build_xgb_aft_dmatrix(X, T, E, enable_categorical: bool = False):
     return d_matrix
 
 
-def build_xgb_cox_dmatrix(X, T, E, enable_categorical: bool = False):
+def build_xgb_cox_dmatrix(X, T, E, enable_categorical: bool = False, feature_types: Optional[Sequence[str]] = None):
     """Builds a XGB DMatrix using specified Data Frame of features (X)
         arrays of times (T) and censors/events (E).
 
@@ -117,14 +124,14 @@ def build_xgb_cox_dmatrix(X, T, E, enable_categorical: bool = False):
             Experimental support of specializing for categorical features.  Do not set
             to True unless you are interested in development. Also, JSON/UBJSON
             serialization format is required.
-
+        feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
     Returns:
         (DMatrix): A XGB DMatrix is returned including features and target.
     """
 
     target = np.where(E, T, -T)
 
-    return xgb.DMatrix(X, label=target, enable_categorical=enable_categorical)
+    return xgb.DMatrix(X, label=target, enable_categorical=enable_categorical, feature_types=feature_types)
 
 
 def hazard_to_survival(interval):

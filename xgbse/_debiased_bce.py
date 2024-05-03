@@ -1,4 +1,6 @@
 import warnings
+from typing import Optional, Sequence
+
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -101,10 +103,10 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
     """
 
     def __init__(
-        self,
-        xgb_params=None,
-        lr_params=None,
-        n_jobs=-1,
+            self,
+            xgb_params=None,
+            lr_params=None,
+            n_jobs=-1,
     ):
         """
         Args:
@@ -152,17 +154,18 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         self.feature_importances_ = None
 
     def fit(
-        self,
-        X,
-        y,
-        num_boost_round=1000,
-        validation_data=None,
-        early_stopping_rounds=None,
-        verbose_eval=0,
-        persist_train=False,
-        index_id=None,
-        time_bins=None,
-        enable_categorical: bool = False
+            self,
+            X,
+            y,
+            num_boost_round=1000,
+            validation_data=None,
+            early_stopping_rounds=None,
+            verbose_eval=0,
+            persist_train=False,
+            index_id=None,
+            time_bins=None,
+            enable_categorical: bool = False,
+            feature_types: Optional[Sequence[str]] = None
     ):
         """
         Transform feature space by fitting a XGBoost model and returning its leaf indices.
@@ -202,6 +205,9 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
 
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
+
+
         Returns:
             XGBSEDebiasedBCE: Trained XGBSEDebiasedBCE instance
         """
@@ -212,15 +218,17 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         self.time_bins = time_bins
 
         # converting data to xgb format
-        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"], enable_categorical=enable_categorical)
+        dtrain = convert_data_to_xgb_format(X, y, self.xgb_params["objective"],
+                                            enable_categorical=enable_categorical, feature_types=feature_types)
 
         # converting validation data to xgb format
         evals = ()
         if validation_data:
             X_val, y_val = validation_data
             dvalid = convert_data_to_xgb_format(
-                X_val, y_val, self.xgb_params["objective"], enable_categorical=enable_categorical
-            )
+                X_val, y_val, self.xgb_params["objective"],
+                enable_categorical=enable_categorical, feature_types=feature_types)
+
             evals = [(dvalid, "validation")]
 
         # training XGB
@@ -355,7 +363,13 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         # to cumulative survival curve
         return hazard_to_survival(preds)
 
-    def predict(self, X, return_interval_probs=False, enable_categorical: bool = False):
+    def predict(
+            self,
+            X,
+            return_interval_probs=False,
+            enable_categorical: bool = False,
+            feature_types: Optional[Sequence[str]] = None
+    ):
         """
         Predicts survival probabilities using the XGBoost + Logistic Regression pipeline.
 
@@ -374,6 +388,8 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
 
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
+
         Returns:
             pd.DataFrame: A dataframe of survival probabilities
             for all times (columns), from a time_bins array, for all samples of X
@@ -382,7 +398,7 @@ class XGBSEDebiasedBCE(XGBSEBaseEstimator):
         """
 
         # converting to xgb format
-        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical)
+        d_matrix = xgb.DMatrix(X, enable_categorical=enable_categorical, feature_types=feature_types)
 
         # getting leaves and extracting neighbors
         leaves = self.bst.predict(

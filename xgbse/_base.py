@@ -1,3 +1,5 @@
+from typing import Optional, Sequence
+
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -23,7 +25,8 @@ class XGBSEBaseEstimator(BaseEstimator):
             query_id=None,
             index_id=None,
             n_neighbors=30,
-            enable_categorical: bool = False
+            enable_categorical: bool = False,
+            feature_types: Optional[Sequence[str]] = None
     ):
         """
         Search for prototypes (size: n_neighbors) for each unit in a
@@ -33,6 +36,8 @@ class XGBSEBaseEstimator(BaseEstimator):
 
         Args:
             query_data (pd.DataFrame): Dataframe of features to be used as input
+
+            index_data ([pd.Series, np.array]): Data to be trained with xgboost
 
             query_id ([pd.Series, np.array]): Series or array of identification for each sample of query_data.
                 Will be used in set_index if specified.
@@ -48,6 +53,9 @@ class XGBSEBaseEstimator(BaseEstimator):
                 Experimental support of specializing for categorical features.  Do not set
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
+
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
+
 
         Returns:
             comps_df (pd.DataFrame): A dataframe of comparables/neighbors for each
@@ -70,7 +78,7 @@ class XGBSEBaseEstimator(BaseEstimator):
             index_id = self.index_id
             index = self.tree
         else:
-            index_matrix = xgb.DMatrix(index_data, enable_categorical=enable_categorical)
+            index_matrix = xgb.DMatrix(index_data, enable_categorical=enable_categorical, feature_types=feature_types)
             index_leaves = self.bst.predict(
                 index_matrix,
                 pred_leaf=True,
@@ -81,7 +89,7 @@ class XGBSEBaseEstimator(BaseEstimator):
                 index_leaves = index_leaves.reshape(-1, 1)
             index = BallTree(index_leaves, metric="hamming")
 
-        query_matrix = xgb.DMatrix(query_data, enable_categorical=enable_categorical)
+        query_matrix = xgb.DMatrix(query_data, enable_categorical=enable_categorical, feature_types=feature_types)
         query_leaves = self.bst.predict(
             query_matrix,
             pred_leaf=True,

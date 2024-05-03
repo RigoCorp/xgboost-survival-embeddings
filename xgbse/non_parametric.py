@@ -55,7 +55,7 @@ def calculate_exp_boundary(survival_func, V, z):
     C = np.log(-np.log(survival_func)) + z * np.sqrt(V)
     C_exp = np.exp(-np.exp(C))
 
-    return pd.DataFrame(C_exp).fillna(method="bfill").fillna(method="ffill").values
+    return pd.DataFrame(C_exp).bfill().ffill().values
 
 
 def sample_time_bins(surv_array, T_neighs, time_bins):

@@ -1,3 +1,5 @@
+from typing import Optional, Sequence
+
 import pandas as pd
 from copy import deepcopy
 from sklearn.utils import resample
@@ -5,7 +7,6 @@ from sklearn.base import BaseEstimator
 
 
 class XGBSEBootstrapEstimator(BaseEstimator):
-
     """
     Bootstrap meta-estimator for XGBSE models:
 
@@ -51,7 +52,6 @@ class XGBSEBootstrapEstimator(BaseEstimator):
 
         # loop for n_estimators
         for i in range(self.n_estimators):
-
             X_sample, y_sample = resample(X, y, random_state=i + self.random_state)
 
             trained_model = self.base_estimator.fit(X_sample, y_sample, **kwargs)
@@ -60,7 +60,14 @@ class XGBSEBootstrapEstimator(BaseEstimator):
 
         return self
 
-    def predict(self, X, return_ci=False, ci_width=0.683, return_interval_probs=False, enable_categorical=False):
+    def predict(self,
+                X,
+                return_ci=False,
+                ci_width=0.683,
+                return_interval_probs=False,
+                enable_categorical=False,
+                feature_types: Optional[Sequence[str]] = None
+                ):
 
         """
         Predicts survival as given by the base estimator. A survival function, its upper and lower
@@ -73,12 +80,16 @@ class XGBSEBootstrapEstimator(BaseEstimator):
 
             ci_width (Float): width of confidence interval
 
+            return_interval_probs (Bool): whether to compute interval probabilities
+
             enable_categorical: boolean, optional
                 .. versionadded:: 1.3.0
                 .. note:: This parameter is experimental
                 Experimental support of specializing for categorical features.  Do not set
                 to True unless you are interested in development. Also, JSON/UBJSON
                 serialization format is required.
+
+            feature_types (Sequence[str]): Seq indicating the column type c or q, for categorical or numerical respect.
 
         Returns:
             ([(pd.DataFrame, np.array, np.array), pd.DataFrame]):
@@ -97,9 +108,11 @@ class XGBSEBootstrapEstimator(BaseEstimator):
         preds_list = []
 
         for estimator in self.estimators_:
-
             temp_preds = estimator.predict(
-                X, return_interval_probs=return_interval_probs, enable_categorical=enable_categorical
+                X,
+                return_interval_probs=return_interval_probs,
+                enable_categorical=enable_categorical,
+                feature_types=feature_types
             )
             preds_list.append(temp_preds)
 
@@ -108,7 +121,6 @@ class XGBSEBootstrapEstimator(BaseEstimator):
         preds_df = agg_preds.groupby(level=0).mean()
 
         if return_ci:
-
             low_p = 0.5 - ci_width / 2
             high_p = 0.5 + ci_width / 2
 
