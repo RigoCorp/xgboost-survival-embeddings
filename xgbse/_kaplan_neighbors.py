@@ -112,7 +112,7 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
             persist_train=True,
             index_id=None,
             time_bins=None,
-            enable_categorical: bool = False,
+            enable_categorical: bool = True,
             feature_types: Optional[Sequence[str]] = None
     ):
         """
@@ -211,7 +211,7 @@ class XGBSEKaplanNeighbors(XGBSEBaseEstimator):
             return_ci=False,
             ci_width=0.683,
             return_interval_probs=False,
-            enable_categorical: bool = False,
+            enable_categorical: bool = True,
             feature_types: Optional[Sequence[str]] = None
     ):
         """
@@ -384,7 +384,7 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
             index_id=None,
             time_bins=None,
             ci_width=0.683,
-            enable_categorical: bool = False,
+            enable_categorical: bool = True,
             feature_types: Optional[Sequence[str]] = None,
             num_boost_round: int = None,
             **xgb_kwargs
@@ -505,7 +505,7 @@ class XGBSEKaplanTree(XGBSEBaseEstimator):
             X,
             return_ci=False,
             return_interval_probs=False,
-            enable_categorical: bool = False,
+            enable_categorical: bool = True,
             feature_types: Optional[Sequence[str]] = None
     ):
         """

@@ -45,7 +45,7 @@ def convert_y(y):
 
 
 def convert_data_to_xgb_format(X, y, objective,
-                               enable_categorical: bool = False,
+                               enable_categorical: bool = True,
                                feature_types: Optional[Sequence[str]] = None):
     """Convert (X, y) data format to xgb.DMatrix format, either using cox or aft models.
 
@@ -78,7 +78,7 @@ def convert_data_to_xgb_format(X, y, objective,
 
 
 # Building XGB Design matrices - AFT and Cox Model
-def build_xgb_aft_dmatrix(X, T, E, enable_categorical: bool = False, feature_types: Optional[Sequence[str]] = None):
+def build_xgb_aft_dmatrix(X, T, E, enable_categorical: bool = True, feature_types: Optional[Sequence[str]] = None):
     """Builds a XGB DMatrix using specified Data Frame of features (X)
      arrays of times (T) and censors/events (E).
 
@@ -110,7 +110,7 @@ def build_xgb_aft_dmatrix(X, T, E, enable_categorical: bool = False, feature_typ
     return d_matrix
 
 
-def build_xgb_cox_dmatrix(X, T, E, enable_categorical: bool = False, feature_types: Optional[Sequence[str]] = None):
+def build_xgb_cox_dmatrix(X, T, E, enable_categorical: bool = True, feature_types: Optional[Sequence[str]] = None):
     """Builds a XGB DMatrix using specified Data Frame of features (X)
         arrays of times (T) and censors/events (E).
 

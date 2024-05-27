@@ -25,7 +25,7 @@ class XGBSEBaseEstimator(BaseEstimator):
             query_id=None,
             index_id=None,
             n_neighbors=30,
-            enable_categorical: bool = False,
+            enable_categorical: bool = True,
             feature_types: Optional[Sequence[str]] = None
     ):
         """

@@ -109,7 +109,7 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
             persist_train=False,
             index_id=None,
             time_bins=None,
-            enable_categorical: bool = False,
+            enable_categorical: bool = True,
             feature_types: Optional[Sequence[str]] = None
     ):
         """
@@ -222,7 +222,7 @@ class XGBSEStackedWeibull(XGBSEBaseEstimator):
 
     def predict(self, X,
                 return_interval_probs=False,
-                enable_categorical: bool = False,
+                enable_categorical: bool = True,
                 feature_types: Optional[Sequence[str]] = None
                 ):
         """
